@@ -107,7 +107,10 @@ SKIP_DIRS = {"Android", "DCIM", "Pictures", "Music", "Movies", "Download",
              "Recordings", "SpeedSoftware", "TitaniumBackup", "MIUI",
              "ColorOS", "Snapdrop", "Edit", "Fonts", "Notifications",
              "Sounds", "Ringtones", "Pictures", "Movies", "Podcasts",
-             "Recordings", "tbs", "tp", "talkingdata", "bugly", "umeng"}
+             "Recordings", "tbs", "tp", "talkingdata", "bugly", "umeng",
+             # Windows 用户目录复数名（避免全盘扫描浪费时间）
+             "Downloads", "Videos", "OneDrive", "node_modules", "WindowsApps",
+             "ProgramData", "$Recycle.Bin", "System Volume Information"}
 
 # 桌面端系统目录 — 避免递归扫描浪费在系统文件上
 if sys.platform == "win32":

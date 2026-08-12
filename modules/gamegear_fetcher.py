@@ -18,6 +18,7 @@ GameGear 提供极其丰富的游戏媒体（box art / marquee / screenshots / f
 
 import asyncio
 import os
+import sys
 import tempfile
 import threading
 import time
@@ -56,8 +57,16 @@ _PROFILE_DIR = os.path.join(
     tempfile.gettempdir(), "iisusc_gg_profile"
 )
 
-_UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36")
+# UA 按平台生成，避免 macOS UA 跑在 Windows Chromium 上触发 Cloudflare 指纹异常
+if sys.platform == "win32":
+    _UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+           "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36")
+elif sys.platform == "darwin":
+    _UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+           "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36")
+else:
+    _UA = ("Mozilla/5.0 (X11; Linux x86_64) "
+           "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36")
 
 
 class GameGearFetcher:
@@ -86,15 +95,19 @@ class GameGearFetcher:
         self._last = time.monotonic()
 
     def _ensure_browser(self):
-        """懒启动 Playwright 浏览器（持久化 profile，自动过 Cloudflare）。"""
+        """懒启动 Playwright 浏览器（持久化 profile，自动过 Cloudflare）。
+
+        持久化 profile 可能因异常退出残留锁（Windows 上常见），
+        启动失败时自动回退到一次性临时 profile。
+        """
         if self._page is not None:
             return self._page
         from playwright.async_api import async_playwright
 
-        async def _start():
+        async def _start(profile_dir: str):
             self._pw = await async_playwright().start()
             self._ctx = await self._pw.chromium.launch_persistent_context(
-                _PROFILE_DIR,
+                profile_dir,
                 headless=False,  # 真实浏览器窗口，利于过 Cloudflare
                 user_agent=_UA,
                 args=["--disable-blink-features=AutomationControlled"],
@@ -102,7 +115,16 @@ class GameGearFetcher:
             self._page = self._ctx.pages[0] if self._ctx.pages else await self._ctx.new_page()
             return self._page
 
-        return self._run(_start())
+        try:
+            return self._run(_start(_PROFILE_DIR))
+        except Exception as first_err:
+            # 持久化 profile 锁残留/损坏 → 用临时 profile 重试
+            self._pw = self._ctx = self._page = None
+            try:
+                tmp_dir = tempfile.mkdtemp(prefix="iisusc_gg_profile_")
+                return self._run(_start(tmp_dir))
+            except Exception:
+                return {"_error": f"GameGear浏览器启动失败: {first_err}"}
 
     # ------------------------------------------------------------------
     # 事件循环管理（Playwright async 对象绑定创建它的 loop，必须持久复用）
@@ -251,6 +273,9 @@ class GameGearFetcher:
             page = self._ensure_browser()
         except Exception as e:
             return {"_error": f"GameGear浏览器启动失败: {e}"}
+        # _ensure_browser 失败时返回 {"_error": ...} dict 而非 page
+        if isinstance(page, dict):
+            return page
 
         slug = PLATFORM_SLUGS.get((platform or "").upper(), "")
 

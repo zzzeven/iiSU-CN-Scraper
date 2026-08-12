@@ -38,12 +38,23 @@ python3 main.py
 
 ## Windows 桌面端
 
-```bash
+**双击 `启动_iiSU.bat` 即可**（自动：选 Python → 建 venv → 装依赖 → 装 Playwright Chromium → 启动）
+
+或手动方式：
+
+```bat
 pip install -r requirements.txt
+python -m playwright install chromium   REM 必需，GameGear 数据源依赖
 python main.py
 ```
 
-**配置文件位置**：`%APPDATA%/iiSU-CN-Scraper/config.json`
+**配置文件位置**：`%APPDATA%\iiSU-CN-Scraper\iisusc_config.json`
+
+**Windows 注意事项**：
+- 需要 Python 3.10+（安装时勾选 "Add python.exe to PATH"）
+- 首次刮削 GameGear 会弹出 Chromium 窗口过 Cloudflare 验证，属正常现象
+- 若"浏览文件夹"按钮无反应（Flet 已知问题），可在设置页手动输入 ROM 路径
+- 若 GameGear 数据源异常（如强杀进程后锁残留），会自动回退 Bangumi，或删除 `%TEMP%\iisusc_gg_profile` 后重试
 
 ---
 
