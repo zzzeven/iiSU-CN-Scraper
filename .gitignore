@@ -1,0 +1,27 @@
+user_config.json
+__pycache__/
+*.pyc
+*.apk
+bin/
+
+*.zip
+build/
+
+# macOS 打包产物
+*.app
+*.dmg
+
+# Flet 打包缓存
+.flet/
+
+# 配置备份
+*.bak
+
+# Python 虚拟环境（数百 MB，绝不提交）
+.venv/
+
+# 本地开发记录
+.zcode/
+
+# macOS 系统文件
+.DS_Store

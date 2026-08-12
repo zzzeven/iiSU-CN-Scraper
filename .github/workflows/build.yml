@@ -1,0 +1,81 @@
+name: Build Apps
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  # ---------- macOS .app ----------
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Flet
+        run: pip install flet
+
+      - name: Build macOS app
+        run: flet build macos
+
+      - name: List build output
+        run: |
+          ls -la build/macos/ 2>/dev/null || echo "build/macos/ not found"
+
+      - name: Upload macOS app
+        uses: actions/upload-artifact@v4
+        with:
+          name: iiSU-CN-Scraper-macOS
+          path: build/macos/*.app
+          if-no-files-found: error
+          overwrite: true
+
+  # ---------- Android APK ----------
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip openjdk-17-jdk \
+            autoconf libtool pkg-config \
+            zlib1g-dev libncurses-dev \
+            cmake libffi-dev libssl-dev \
+            libltdl-dev
+
+      - name: Install Python build tools
+        run: |
+          pip install flet buildozer cython
+
+      - name: Build APK
+        run: |
+          yes | flet build apk \
+            --android-permissions android.permission.INTERNET=true \
+            --android-permissions android.permission.READ_EXTERNAL_STORAGE=true \
+            --android-permissions android.permission.WRITE_EXTERNAL_STORAGE=true \
+            --android-permissions android.permission.READ_MEDIA_IMAGES=true \
+            --android-permissions android.permission.READ_MEDIA_VIDEO=true \
+            --android-permissions android.permission.MANAGE_EXTERNAL_STORAGE=true \
+            --android-permissions android.permission.ACCESS_MEDIA_LOCATION=true
+
+      - name: List build output
+        run: |
+          find build/ -name "*.apk" -o -name "*.aab" 2>/dev/null || echo "No APK/AAB found"
+          ls -la build/apk/ 2>/dev/null || echo "build/apk/ not found"
+          ls -la build/ 2>/dev/null || echo "build/ not found"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: iiSU-CN-Scraper-APK
+          path: build/apk/**/*.apk
+          if-no-files-found: error
+          overwrite: true

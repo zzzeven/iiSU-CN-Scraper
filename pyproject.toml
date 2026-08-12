@@ -1,0 +1,23 @@
+# iiSU-CN-Scraper 项目配置
+# 打包: flet build macos / flet build apk
+
+[project]
+name = "iisu-cn-scraper"
+version = "1.0.0"
+description = "中文 ROM 刮削工具 — macOS / Windows / Android 通用"
+requires-python = ">=3.10"
+
+[tool.flet]
+# 应用元数据
+org = "com.kiloiam"
+app_name = "iiSU CN Scraper"
+
+# macOS 打包配置 (flet build macos → 生成 .app)
+[tool.flet.macos]
+bundle_identifier = "com.kiloiam.iisucnscraper"
+
+# Android 打包配置 (保留，flet build apk)
+[tool.flet.android.permission]
+"android.permission.READ_EXTERNAL_STORAGE" = true
+"android.permission.WRITE_EXTERNAL_STORAGE" = true
+"android.permission.MANAGE_EXTERNAL_STORAGE" = true

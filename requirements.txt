@@ -1,0 +1,8 @@
+# iiSU-CN-Scraper 运行依赖
+# Flet 0.85+ 提供 ft.Icons / ft.Button / ft.run / FilePicker(Service) API
+flet>=0.85.0
+requests>=2.28.0
+openai>=1.0.0
+# GameGear 数据源（第一优先级）— Cloudflare 保护，需真实浏览器过验证
+# 安装后需执行一次: python -m playwright install chromium
+playwright>=1.40.0
