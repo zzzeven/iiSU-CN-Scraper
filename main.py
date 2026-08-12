@@ -16,6 +16,7 @@ from modules.llm_normalizer import normalize_rom_name
 from modules.bangumi_fetcher import BangumiFetcher
 from modules.tgdb_fetcher import TGDBFetcher
 from modules.gamegear_fetcher import GameGearFetcher
+from modules.platform_detector import detect_rom_platform
 from modules.llm_normalizer import translate_desc
 from modules.xml_builder import (
     load_existing_gamelist, build_game_element, write_gamelist,
@@ -1660,7 +1661,11 @@ def main(page: ft.Page):
                         use_tgdb_first = bool(single) and state.force_tgdb
                         meta = None
                         source = ""
-                        rom_platform = _sys(os.path.basename(parent))
+                        rom_platform, platform_source = detect_rom_platform(rp)
+                        if rom_platform:
+                            add_log(f"平台识别: {rom_platform}（来源: {platform_source}）")
+                        else:
+                            add_log(f"平台识别失败: {fn[:35]}，跳过 GameGear 防止跨平台误匹配")
 
                         if use_tgdb_first:
                             # 强制 TGDB：未配 key 则提示并回退
@@ -1673,7 +1678,7 @@ def main(page: ft.Page):
                                 add_log("强制 TGDB 已开启但未配 API Key，回退默认流程")
 
                         # 1) GameGear (第一数据源) — 平台 slug 过滤，媒体最丰富
-                        if not meta or "_error" in meta:
+                        if rom_platform and (not meta or "_error" in meta):
                             status.value = f"GameGear: {en or zh or fn}"
                             _update_ui()
                             try:

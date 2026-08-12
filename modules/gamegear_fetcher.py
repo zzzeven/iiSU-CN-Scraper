@@ -52,6 +52,14 @@ MEDIA_TYPES = {
     "wheel": "wheel",
 }
 
+
+def filter_platform_links(links: list[dict], slug: str) -> list[dict]:
+    """Keep only GameGear result links for the requested platform."""
+    if not slug:
+        return links
+    marker = f"/archive/games/{slug}/"
+    return [link for link in links if marker in (link.get("href") or "")]
+
 # Playwright 持久化 profile 目录（cookie 跨会话复用，避免每次过 Cloudflare）
 _PROFILE_DIR = os.path.join(
     tempfile.gettempdir(), "iisusc_gg_profile"
@@ -320,9 +328,10 @@ class GameGearFetcher:
 
             # 平台过滤：优先 slug 匹配
             if slug:
-                slugged = [r for r in uniq if f"/archive/games/{slug}/" in r["href"]]
-                if slugged:
-                    uniq = slugged
+                slugged = filter_platform_links(uniq, slug)
+                if not slugged:
+                    return None
+                uniq = slugged
 
             # Arcade 平台：slug 是 MAME 短名（avsp/ikari/sfach），与英文名无词重叠，
             # 相似度判断无意义 → 直接用搜索结果第一个（GameGear 已按相关度排序）
@@ -356,6 +365,13 @@ class GameGearFetcher:
         ok = await self._robust_goto(page, f"{self.BASE}{game_path}")
         if not ok:
             return None  # 页面没就绪（Cloudflare 或 404），回退搜索
+
+        # 已知平台必须严格匹配最终页面 URL，防止重定向到同名的其他平台。
+        if slug:
+            current_url = (getattr(page, "url", "") or "").lower()
+            expected = f"/archive/games/{slug}/"
+            if expected not in current_url:
+                return None
 
         # h1 与 404 检测
         try:

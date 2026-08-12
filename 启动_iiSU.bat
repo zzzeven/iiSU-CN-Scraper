@@ -1,6 +1,7 @@
 @echo off
 chcp 65001 >nul
 setlocal
+set "PYTHONUTF8=1"
 cd /d "%~dp0"
 
 REM ============================================================
@@ -54,7 +55,7 @@ if not exist ".venv\Scripts\python.exe" (
 REM ---- 3) 依赖缺失则安装 ----
 %PY% -c "import flet" >nul 2>nul
 if errorlevel 1 (
-    echo [提示] 安装依赖 (flet/requests/openai/playwright) ...
+    echo [提示] 安装依赖: flet/requests/openai/playwright ...
     %PY% -m pip install -r requirements.txt
     if errorlevel 1 (
         echo [错误] 依赖安装失败
